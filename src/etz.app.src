@@ -7,6 +7,6 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, { etime_app, []}},
+  {mod, { etz_app, []}},
   {env, []}
  ]}.
