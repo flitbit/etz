@@ -9,7 +9,7 @@ Erlang Time and Zone; an Erlang module for ISO 8601 datetime including timezones
 * Round-trip ISO 8601 formatting, with fractional seconds and timezone info
 * Convert to and from `calendar:datetime()`
 * Convert a datetime from one timezone to another
-* Manage ambient timezone (per process)
+* Manage ambient timezone
 
 ## Non-Features
 
@@ -78,3 +78,16 @@ Erlang associates the operating system's local timezone with each process and pr
 * `iso_format(DateTime)` - Formats the specified `calendar:datetime()` in ISO 8601 format, according to the ambient timezone
 * `iso_format(IsoTime)` - Formats the specified `etz:iso_time()` in ISO 8601 format
 
+# More
+
+There are a lot of insightful tests under in `test/etz_tests.erl`; please have a look.
+
+Run the tests in bash:
+
+```bash
+make test
+```
+
+Since this is brand spanking new on `2014-04-16`, and since I'm relatively new to Erlang, I welcome any feedback, issues, pull requests (especially those with more tests or integrations).
+
+Peace.
