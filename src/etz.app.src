@@ -1,6 +1,6 @@
 {application, etz,
  [
-  {description, "Erlang time module to ease interactions in a web-world."},
+  {description, "Erlang time module to ease interoperability in a web-world."},
   {vsn, "0.1"},
   {registered, []},
   {applications, [

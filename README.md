@@ -1,12 +1,12 @@
 etz  [![Build Status](https://travis-ci.org/flitbit/etz.png)](http://travis-ci.org/flitbit/etz)
 ======
 
-Erlang Time and Zone; an Erlang module for ISO 8601 datetime including timezones.
+Erlang time module to ease interoperability in a web-world.
 
 ## Features
 
 * Full resolution times with timezone
-* Round-trip ISO 8601 formatting, with fractional seconds and timezone info
+* Round-trip ISO 8601 parsing and formatting, with fractional seconds and timezone info
 * Convert to and from `calendar:datetime()`
 * Convert a datetime from one timezone to another
 * Manage ambient timezone
@@ -14,6 +14,10 @@ Erlang Time and Zone; an Erlang module for ISO 8601 datetime including timezones
 ## Non-Features
 
 * Timezone names - figuring out a timezone's name is not important to ISO 8601, it deals with math not politics.
+
+## Change Log
+
+* `0.1`, 2014-04-16 - Initial. Feedback, issues, and pull-requests welcome.
 
 ## iso_time
 
