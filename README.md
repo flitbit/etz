@@ -78,6 +78,13 @@ Erlang associates the operating system's local timezone with each process and pr
 * `iso_format(DateTime)` - Formats the specified `calendar:datetime()` in ISO 8601 format, according to the ambient timezone
 * `iso_format(IsoTime)` - Formats the specified `etz:iso_time()` in ISO 8601 format
 
+
+## Parse Function
+
+* `iso_parse(Input)` - Parses an ISO 8601 string and constructs the corresponding `etz:iso_time()`. If the formatted date does not contain timestamp info it is assumed to be in the ambient timezone.
+
+The parsing is implemented as a validating parser and will fail-fast if the input contains invalid characters or the resulting date would be invalid.
+
 # More
 
 There are a lot of insightful tests under in `test/etz_tests.erl`; please have a look.
