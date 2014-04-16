@@ -1,0 +1,12 @@
+{application, etz,
+ [
+  {description, "Erlang time module to ease interactions in a web-world."},
+  {vsn, "0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { etime_app, []}},
+  {env, []}
+ ]}.
