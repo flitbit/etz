@@ -41,5 +41,5 @@ test: app
 	@$(REBAR) eunit skip_deps=true
 
 console:
-	exec erl $(ERLFLAGS)
-#	  -eval "application:start(etz)"
+	exec erl $(ERLFLAGS) \
+	  -eval "application:start(etz)"

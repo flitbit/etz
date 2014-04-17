@@ -18,7 +18,12 @@ Erlang time module to ease interoperability in a web-world.
 
 ## Change Log
 
-* `0.1`, 2014-04-16 - Initial. Feedback, issues, and pull-requests welcome.
+*   `0.1` 2014-04-16 - Initial. Feedback, issues, and pull-requests welcome.
+* `0.1.1` Improved types and specs; verified with Dialyzer.
+
+## `etz` is a `gen_server`
+
+`etz` is a `gen_server`, and must be started before it can be used. This can be done by ensuring it is in the runtime's path and call `application:start(etz)` in your own starup code. See the `Makefile` to see how to add the startup to the `erl` command line.
 
 ## iso_time
 
