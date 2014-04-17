@@ -11,3 +11,4 @@ deps
 *.dump
 ebin
 apps/*/ebin
+.deps_plt

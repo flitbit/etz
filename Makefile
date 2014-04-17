@@ -1,5 +1,9 @@
 .PHONY: deps
 
+ERLFLAGS= -pa $(PWD)/.eunit -pa $(PWD)/ebin -pa $(PWD)/deps/*/ebin
+
+DEPS_PLT=$(PWD)/.deps_plt
+DEPS=erts kernel stdlib
 REBAR=./rebar
 
 all: deps compile modules
@@ -15,6 +19,15 @@ app: modules
 deps:
 	@$(REBAR) get-deps
 
+$(DEPS_PLT):
+	@echo Building local plt at $(DEPS_PLT)
+	@echo
+	dialyzer --output_plt $(DEPS_PLT) --build_plt \
+	   --apps $(DEPS)
+
+dialyzer: $(DEPS_PLT)
+	dialyzer --fullpath --plt $(DEPS_PLT) -Wrace_conditions -r ./ebin
+
 clean-modules:
 
 clean: clean-modules
@@ -22,11 +35,11 @@ clean: clean-modules
 
 distclean: clean
 	@$(REBAR) delete-deps
+	- rm -rf $(DEPS_PLT)
 
 test: app
 	@$(REBAR) eunit skip_deps=true
 
 console:
-	exec erl -pa $(PWD)/ebin \
-	  -pa $(PWD)/deps/*/ebin \
-	  -eval "application:start(etz)"
+	exec erl $(ERLFLAGS)
+#	  -eval "application:start(etz)"

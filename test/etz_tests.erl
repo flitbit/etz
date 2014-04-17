@@ -29,7 +29,7 @@ main_test_() ->
 						{UDateTime,_,{'+',0,0}} = etz:universal_now(),
 						LSeconds = calendar:datetime_to_gregorian_seconds(LDateTime),
 						USeconds = calendar:datetime_to_gregorian_seconds(UDateTime),
-						?_assert(LSeconds =/= USeconds orelse (TzH =:= 0 andalso TzM =:= 0))
+						?assert(LSeconds =/= USeconds orelse (TzH =:= 0 andalso TzM =:= 0))
 				end},
 
 

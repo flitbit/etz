@@ -42,32 +42,42 @@
 	iso_parse_input/3
 	]).
 
+-type year() :: non_neg_integer().
+-type month() :: 1..12.
+-type day() :: 1..31.
+
+-type hour() :: 0..24.
+-type minute() :: 0..59.
+-type second() :: 0..59.
+
+-type megaseconds() :: non_neg_integer().
+-type seconds() :: non_neg_integer().
+-type microseconds() :: 0..1000000.
+
 -type timestamp() :: tuple(
-		MegaSecs::integer(),
-		Secs::integer(),
-		MicroSecs::integer()
+		MegaSecs :: megaseconds(),
+		Secs :: seconds(),
+		MicroSecs :: microseconds()
 		).
 
--type tzSign() :: '+' | '-'.
+-type sign() :: '+' | '-'.
 
 -type timezone() :: tuple(
-		Sign :: tzSign(),
-		Hours :: calendar:hour(),
-		Minutes :: calendar:minute()
+		Sign :: sign(),
+		Hours :: hour(),
+		Minutes :: minute()
 		).
 
--define(UTC, {'+', 0, 0 }).
-
 -type date() :: tuple(
-		Year :: calendar:year(),
-		Month :: calendar:month(),
-		Day :: calendar:day()
+		Year :: year(),
+		Month :: month(),
+		Day :: day()
 		).
 
 -type time() :: tuple(
-		Hour :: calendar:hour(),
-		Minute :: calendar:minute(),
-		Second :: calendar:second()
+		Hour :: hour(),
+		Minute :: minute(),
+		Second :: second()
 		).
 
 -type datetime() :: tuple(
@@ -77,9 +87,22 @@
 
 -type iso_time() :: tuple(
 		Datetime :: datetime(),
-		Microseconds :: integer(),
+		Microseconds :: microseconds(),
 		Timezone :: timezone()
 		).
+
+-type parse_ok() :: tuple(ok, iso_time()).
+
+-type parse_error() :: tuple(
+	error,
+	ErrorInfo :: tuple(
+		ErrorKind :: atom(),
+		Where :: list()
+	)).
+
+-type parse_result() :: parse_ok() | parse_error().
+
+-define(UTC, {'+', 0, 0 }).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% API
@@ -88,36 +111,45 @@
 start_link() ->
 	gen_server:start_link({local, ?SRV}, ?MODULE, [], []).
 
-use_timezone({Sgn,H,M}=Tz) when
+-spec use_timezone(Timezone :: timezone()) -> ok.
+use_timezone(Timezone) ->
+	use_timezone(self(),Timezone).
+
+-spec use_timezone(
+	Key :: any(),
+	Timezone :: timezone()
+	) -> ok.
+use_timezone(Key,{Sgn,H,M}=Timezone) when
 		Sgn =:= '+' orelse Sgn =:= '-',
 		is_integer(H) andalso H >= 0 andalso H =< 23,
 		is_integer(M) andalso M >= 0 andalso M =< 59 ->
-	use_timezone(self(),Tz).
+	ok = gen_server:call(?SRV,{use_timezone,Key,Timezone}).
 
-use_timezone(Key,{Sgn,H,M}=Tz) when
-		Sgn =:= '+' orelse Sgn =:= '-',
-		is_integer(H) andalso H >= 0 andalso H =< 23,
-		is_integer(M) andalso M >= 0 andalso M =< 59 ->
-	ok = gen_server:call(?SRV,{use_timezone,Key,Tz}).
-
+-spec current_timezone() -> timezone().
 current_timezone() ->
 	current_timezone(self()).
 
+-spec current_timezone(Key :: any()) -> timezone().
 current_timezone(Key) ->
 	gen_server:call(?SRV,{current_timezone,Key}).
 
+-spec revert_timezone() -> ok.
 revert_timezone() ->
 	revert_timezone(self()).
 
+-spec revert_timezone(Key :: any()) -> ok.
 revert_timezone(Key) ->
 	ok = gen_server:call(?SRV, {revert_timezone, Key}).
 
+-spec now() -> iso_time().
 now() ->
 	gen_server:call(?SRV, {now, self()}).
 
+-spec now(Key:: any()) -> iso_time().
 now(Tz) ->
 	gen_server:call(?SRV, {now, self(), Tz}).
 
+-spec universal_now() -> iso_time().
 universal_now() ->
 	gen_server:call(?SRV, universal_now).
 
@@ -125,23 +157,36 @@ universal_now() ->
 local_timezone() ->
 	gen_server:call(?SRV, local_timezone).
 
--spec timestamp_to_iso_time(timestamp()) -> iso_time().
+-spec timestamp_to_iso_time(
+	Timestamp :: timestamp()
+	) -> iso_time().
 timestamp_to_iso_time(Timestamp) ->
 	gen_server:call(?SRV, {timestamp_to_iso_time, self(), Timestamp}).
 
--spec timestamp_to_iso_time(timestamp(), timezone()) -> iso_time().
+-spec timestamp_to_iso_time(
+	Timestamp :: timestamp(),
+	Timezone :: timezone()
+	) -> iso_time().
 timestamp_to_iso_time(Timestamp, Tz) ->
 	gen_server:call(?SRV, {timestamp_to_iso_time, self(), Timestamp, Tz}).
 
--spec datetime_to_iso_time(calendar:datetime()) -> iso_time().
+-spec datetime_to_iso_time(
+	DateTime :: calendar:datetime()
+	) -> iso_time().
 datetime_to_iso_time(DateTime) ->
 	gen_server:call(?SRV, {datetime_to_iso_time, self(), DateTime}).
 
--spec datetime_to_iso_time(calendar:datetime(), timezone()) -> iso_time().
+-spec datetime_to_iso_time(
+	DateTime :: calendar:datetime(),
+	Timezone :: timezone()
+	) -> iso_time().
 datetime_to_iso_time(DateTime, Tz) ->
 	gen_server:call(?SRV, {datetime_to_iso_time, self(), DateTime, Tz}).
 
--spec to_timezone(iso_time(), timezone()) -> iso_time().
+-spec to_timezone(
+	IsoTime :: iso_time(),
+	Timezone :: timezone()
+	) -> iso_time().
 to_timezone({DateTime,Micro,Tz}, TargetTz) ->
 	U = to_utc(DateTime, Tz),
 	T = from_utc_to_timezone(U, TargetTz),
@@ -151,14 +196,23 @@ to_timezone({DateTime,Micro,Tz}, TargetTz) ->
 to_universal(FullDateTime) ->
 	to_timezone(FullDateTime, ?UTC).
 
+-spec iso_parse(Input :: binary()) -> parse_result();
+               (Input :: list(integer())) -> parse_result().
 iso_parse(Input) ->
 	gen_server:call(?SRV, {iso_parse, self(), Input}).
 
+-spec iso_format_universal(
+	DateTime :: calendar:datetime()
+	) -> Iso8601Formatted :: binary().
 iso_format_universal({{Y,M,D}, {H,N,S}}=DateTime) when
 		is_integer(Y), is_integer(M), is_integer(D),
 		is_integer(H), is_integer(N), is_integer(S) ->
 	iso_format({DateTime, 0, ?UTC}).
 
+-spec iso_format(
+	DateTime :: calendar:datetime(),
+	Timezone :: timezone()
+	) -> Iso8601Formatted :: binary().
 iso_format({{Y,M,D}, {H,N,S}}=DateTime, {Sgn,ZH,ZM}=Timezone) when
 		is_integer(Y), is_integer(M), is_integer(D),
 		is_integer(H), is_integer(N), is_integer(S),
@@ -167,6 +221,8 @@ iso_format({{Y,M,D}, {H,N,S}}=DateTime, {Sgn,ZH,ZM}=Timezone) when
 		->
 	iso_format({DateTime, 0, Timezone}).
 
+-spec iso_format(DateTime :: calendar:datetime()) -> Iso8601Formatted :: binary();
+                (IsoTime :: iso_time()) -> Iso8601Formatted :: binary().
 iso_format({{Y,M,D}, {H,N,S}}=DateTime) when
 		is_integer(Y), is_integer(M), is_integer(D),
 		is_integer(H), is_integer(N), is_integer(S) ->
@@ -186,6 +242,7 @@ iso_format({{{Y,M,D}, {H,N,S}}, Micro, Tz}) ->
 	IsoStr = io_lib:format(FmtStr, [Y, M, D, H, N, S, Micros, Z]),
 	list_to_binary(IsoStr).
 
+-spec iso_format_timezone(Timezone :: timezone()) -> list().
 iso_format_timezone({Sgn, 0, 0}) when
 		Sgn =:= '+' orelse Sgn =:= '-' ->
 	'Z';
@@ -276,7 +333,7 @@ remaining_minutes_from_seconds(_) ->
 		minute = 0 :: integer(),
 		second = 0 :: integer(),
 		microseconds = 0 :: integer(),
-		tzSign = '+' :: '+' | '-',
+		sign = '+' :: '+' | '-',
 		tzHours = 0 :: integer(),
 		tzMinutes = 0 :: integer()
 		}).
@@ -291,7 +348,7 @@ date_parse_to_iso_time(#date_parse{kind=K}=Parse)
 		minute=NN,
 		second=SS,
 		microseconds=F,
-		tzSign=ZS,
+		sign=ZS,
 		tzHours=ZH,
 		tzMinutes=ZM
 		} = Parse,
@@ -301,9 +358,9 @@ date_parse_to_iso_time(#date_parse{kind=K}=Parse)
 iso_parse_input(Input, Tz, Opt) when is_binary(Input) ->
 	iso_parse_input(binary_to_list(Input), Tz, Opt);
 iso_parse_input(Input, {Sgn,H,M}, {none,_}) when is_list(Input) ->
-	iso_parse_year(Input, #date_parse{tzSign=Sgn,tzHours=H,tzMinutes=M});
+	iso_parse_year(Input, #date_parse{sign=Sgn,tzHours=H,tzMinutes=M});
 iso_parse_input(Input, {Sgn,H,M}, {Digits,_}) when is_list(Input), is_integer(Digits) ->
-	iso_parse_expanded_year(Input, Digits, #date_parse{tzSign=Sgn,tzHours=H,tzMinutes=M}).
+	iso_parse_expanded_year(Input, Digits, #date_parse{sign=Sgn,tzHours=H,tzMinutes=M}).
 
 iso_parse_expanded_year(['+'|Rest], Digits, Acc) ->
 	iso_parse_expanded_year(Rest, Digits, Acc#date_parse{expanded='+'});
@@ -384,11 +441,11 @@ iso_parse_time(Inv, _) ->
 	{error, {invalid_hour, Inv}}.
 
 iso_parse_minute_or_timezone([$Z], Acc) ->
-	date_parse_to_iso_time(Acc#date_parse{tzSign='+',tzHours=0,tzMinutes=0});
+	date_parse_to_iso_time(Acc#date_parse{sign='+',tzHours=0,tzMinutes=0});
 iso_parse_minute_or_timezone([$-|Rest], Acc) ->
-	iso_parse_timezone_hours(Rest, Acc#date_parse{tzSign='-',tzHours=0,tzMinutes=0});
+	iso_parse_timezone_hours(Rest, Acc#date_parse{sign='-',tzHours=0,tzMinutes=0});
 iso_parse_minute_or_timezone([$+|Rest], Acc) ->
-	iso_parse_timezone_hours(Rest, Acc#date_parse{tzSign='+',tzHours=0,tzMinutes=0});
+	iso_parse_timezone_hours(Rest, Acc#date_parse{sign='+',tzHours=0,tzMinutes=0});
 iso_parse_minute_or_timezone([$:,M0,M1|Rest], Acc) when
 		M0 >= $0 andalso M0 =< $5,
 		M1 >= $0 andalso M1 =< $9 ->
@@ -412,11 +469,11 @@ validate_minute(M0, M1, Rest, #date_parse{hour=H}=Acc) ->
 	end.
 
 iso_parse_second_or_timezone([$Z], Acc) ->
-	date_parse_to_iso_time(Acc#date_parse{tzSign='+',tzHours=0,tzMinutes=0});
+	date_parse_to_iso_time(Acc#date_parse{sign='+',tzHours=0,tzMinutes=0});
 iso_parse_second_or_timezone([$-|Rest], Acc) ->
-	iso_parse_timezone_hours(Rest, Acc#date_parse{tzSign='-',tzHours=0,tzMinutes=0});
+	iso_parse_timezone_hours(Rest, Acc#date_parse{sign='-',tzHours=0,tzMinutes=0});
 iso_parse_second_or_timezone([$+|Rest], Acc) ->
-	iso_parse_timezone_hours(Rest, Acc#date_parse{tzSign='+',tzHours=0,tzMinutes=0});
+	iso_parse_timezone_hours(Rest, Acc#date_parse{sign='+',tzHours=0,tzMinutes=0});
 iso_parse_second_or_timezone([$:,S0,S1|Rest], Acc) when
 		S0 >= $0 andalso S0 =< $5,
 		S1 >= $0 andalso S1 =< $9 ->
@@ -440,11 +497,11 @@ validate_second(S0, S1, Rest, #date_parse{hour=H}=Acc) ->
 	end.
 
 iso_parse_fraction_or_timezone([$Z], Acc) ->
-	date_parse_to_iso_time(Acc#date_parse{tzSign='+',tzHours=0,tzMinutes=0});
+	date_parse_to_iso_time(Acc#date_parse{sign='+',tzHours=0,tzMinutes=0});
 iso_parse_fraction_or_timezone([$-|Rest], Acc) ->
-	iso_parse_timezone_hours(Rest, Acc#date_parse{tzSign='-',tzHours=0,tzMinutes=0});
+	iso_parse_timezone_hours(Rest, Acc#date_parse{sign='-',tzHours=0,tzMinutes=0});
 iso_parse_fraction_or_timezone([$+|Rest], Acc) ->
-	iso_parse_timezone_hours(Rest, Acc#date_parse{tzSign='+',tzHours=0,tzMinutes=0});
+	iso_parse_timezone_hours(Rest, Acc#date_parse{sign='+',tzHours=0,tzMinutes=0});
 iso_parse_fraction_or_timezone([$.|Rest], Acc) ->
 	iso_parse_fraction(Rest, [$.|Rest], Acc);
 iso_parse_fraction_or_timezone([$,|Rest], Acc) ->
@@ -484,11 +541,11 @@ iso_parse_week_day([], Acc) ->
 	calculate_week_date([], Acc#date_parse{week_day=0}).
 
 iso_parse_timezone([$Z], Acc) ->
-	date_parse_to_iso_time(Acc#date_parse{tzSign='+',tzHours=0,tzMinutes=0});
+	date_parse_to_iso_time(Acc#date_parse{sign='+',tzHours=0,tzMinutes=0});
 iso_parse_timezone([$-|Rest], Acc) ->
-	iso_parse_timezone_hours(Rest, Acc#date_parse{tzSign='-',tzHours=0,tzMinutes=0});
+	iso_parse_timezone_hours(Rest, Acc#date_parse{sign='-',tzHours=0,tzMinutes=0});
 iso_parse_timezone([$+|Rest], Acc) ->
-	iso_parse_timezone_hours(Rest, Acc#date_parse{tzSign='+',tzHours=0,tzMinutes=0});
+	iso_parse_timezone_hours(Rest, Acc#date_parse{sign='+',tzHours=0,tzMinutes=0});
 iso_parse_timezone([], Acc) ->
 	date_parse_to_iso_time(Acc);
 iso_parse_timezone(Inv, _) ->
