@@ -14,6 +14,7 @@ Erlang time module to ease interoperability in a web-world.
 ## Non-Features
 
 * Timezone names - figuring out a timezone's name is not important to ISO 8601, it deals with math not politics.
+* Non ISO 8601 datetime formats - look to [`qdate`](https://github.com/choptastic/qdate) or ['erlware_commons'](https://github.com/erlware/erlware_commons) for those.
 
 ## Change Log
 
@@ -31,13 +32,15 @@ Erlang defines `calendar:datetime()` such that:
 `etz` defines `etz:iso_time()` such that:
 
 ```erlang
-{ { {Year,Month,Day}, {Hour,Minute,Second} }, Microseconds, Timezone } = etz:now(),
+{{ {Year,Month,Day}, {Hour,Minute,Second} }, Microseconds, Timezone } = etz:now(),
 { Sign, TimezoneHours, TimezoneMinutes } = Timezone.
 ```
 
+Note that what we care about in relation to a timezone is its offset in hours and minutes from Coordinated Universal Time (UTC). With this knowledge there is no ambiguity about what instant in time a particular `iso_time` instance references.
+
 ## ISO Easy
 
-Format either an `etz:iso_time()` or a `calendar:datetime()` for interop with other systems:
+Format either an `iso_time` or a `datetime` for interop with other systems:
 
 ```erlang
 EtzNow = etz:now(),
@@ -53,10 +56,11 @@ Parse ISO 8601 formatted strings:
 {ok,{{{2014,4,16},{12,58,55}},995018,{'-',6,0}}} = etz:iso_parse(<<"2014-04-16T12:58:55.995018-06">>).
 ```
 
-
 ## Manage Ambient Timezone
 
 Erlang associates the operating system's local timezone with each process and provides functions to convert between the local timezone and universal time. It doesn't help much when working with timezones other than local. `etz` adds the notion of an ambient timezone to your process which will be used in place of the local timezone when performing time and timezone math.
+
+Like ISO 8601, `etz` is concerned with identifying points in time. It does so by recording a timezone offset (from Coordinated Universal Time) along with each date-time so that there is no ambiguity about the recorded instant.
 
 ### Ambient Timezone Functions
 
@@ -69,23 +73,22 @@ Erlang associates the operating system's local timezone with each process and pr
 
 * `universal_now()` - Gets the current universal time
 * `now()` - Gets the current time in the current ambient timezone
-* `timestamp_to_iso_time(Timestamp)` - Converts the specified `erlang:timestamp()` to an `iso_time()` in the current ambient timezone
-* `timestamp_to_iso_time(Timestamp,Timezone)` - Converts the specified `erlang:timestamp()` to an `iso_time()` in the specified `Timezone`
-* `datetime_to_iso_time(DateTime)` - Converts the specified `calendar:datetime()` to an `iso_time()` in the current ambient timezone
-* `datetime_to_iso_time(DateTime,Timezone)` - Converts the specified `calendar:datetime()` to an `iso_time()` in the specified `Timezone`
-* `to_timezone(IsoTime, Timezone)` - Converts the specified `etz:iso_time()` to the corresponding time in the specified `Timezone`
-* `to_universal(IsoTime)` - Converts the specified `etz:iso_time()` to the corresponding universal time
+* `timestamp_to_iso_time(Timestamp)` - Converts the specified `timestamp` to an `iso_time` in the current ambient timezone
+* `timestamp_to_iso_time(Timestamp,Timezone)` - Converts the specified `timestamp` to an `iso_time` in the specified `Timezone`
+* `datetime_to_iso_time(DateTime)` - Converts the specified `datetime` to an `iso_time` in the current ambient timezone
+* `datetime_to_iso_time(DateTime,Timezone)` - Converts the specified `datetime` to an `iso_time` in the specified `Timezone`
+* `to_timezone(IsoTime, Timezone)` - Converts the specified `iso_time` to the corresponding time in the specified `Timezone`
+* `to_universal(IsoTime)` - Converts the specified `iso_time` to the corresponding universal time
 
 ## Format Functions
 
-* `iso_format_universal(DateTime)` - Formats the specified `calendar:datetime()` as a universal datetime
-* `iso_format(DateTime)` - Formats the specified `calendar:datetime()` in ISO 8601 format, according to the ambient timezone
-* `iso_format(IsoTime)` - Formats the specified `etz:iso_time()` in ISO 8601 format
-
+* `iso_format_universal(DateTime)` - Formats the specified `datetime` as a universal datetime
+* `iso_format(DateTime)` - Formats the specified `datetime` in ISO 8601 format, according to the ambient timezone
+* `iso_format(IsoTime)` - Formats the specified `iso_time` in ISO 8601 format
 
 ## Parse Function
 
-* `iso_parse(Input)` - Parses an ISO 8601 string and constructs the corresponding `etz:iso_time()`. If the formatted date does not contain timestamp info it is assumed to be in the ambient timezone.
+* `iso_parse(Input)` - Parses an ISO 8601 string and constructs the corresponding `iso_time`. If the formatted date does not contain timestamp info it is assumed to be in the ambient timezone.
 
 The parsing is implemented as a validating parser and will fail-fast if the input contains invalid characters or the resulting date would be invalid.
 
@@ -99,6 +102,6 @@ Run the tests in bash:
 make test
 ```
 
-Since this is brand spanking new on `2014-04-16`, and since I'm relatively new to Erlang, I welcome any feedback, issues, pull requests (especially those with more tests or integrations).
+Since this is brand spanking new on `2014-04-16`, and since I'm relatively new to Erlang, I welcome any feedback, issues, and pull requests (especially those with more tests or integrations).
 
 Peace.
