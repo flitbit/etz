@@ -1,7 +1,7 @@
 {application, etz,
  [
   {description, "Erlang time module to ease interoperability in a web-world."},
-  {vsn, "0.1"},
+  {vsn, "0.1.1"},
   {registered, []},
   {applications, [
                   kernel,
