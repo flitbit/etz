@@ -14,7 +14,7 @@ Erlang time module to ease interoperability in a web-world.
 ## Non-Features
 
 * Timezone names - figuring out a timezone's name is not important to ISO 8601, it deals with math not politics.
-* Non ISO 8601 datetime formats - look to [`qdate`](https://github.com/choptastic/qdate) or ['erlware_commons'](https://github.com/erlware/erlware_commons) for those.
+* Non ISO 8601 datetime formats - look to [`qdate`](https://github.com/choptastic/qdate) or [`erlware_commons`](https://github.com/erlware/erlware_commons) for those.
 
 ## Change Log
 
