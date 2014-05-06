@@ -5,7 +5,7 @@ branches:
     - master
 notifications:
   email: phillip@flitbit.com
-env:
+otp_release:
   - R17
   - R16B03-01
   - R16B03
